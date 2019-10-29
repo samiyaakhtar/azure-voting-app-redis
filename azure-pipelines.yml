@@ -38,7 +38,7 @@ stages:
         tags: |
           $(tag)
 
-- stage: HLD Update
+- stage: hld_update
   displayName: ACR to HLD Stage
   dependsOn: Build
   condition: succeeded('Build')
@@ -65,3 +65,4 @@ stages:
         SUBCOMPONENT: azure-vote
         YAML_PATH: image.tag
         YAML_PATH_VALUE: $(Build.BuildId)
+        REPO: https://github.com/samiyaakhtar/azure-voting-app.git
