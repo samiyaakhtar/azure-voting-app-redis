@@ -13,7 +13,7 @@ variables:
   dockerRegistryServiceConnection: '66b6cef7-2f10-4780-843f-6a6156cdba5c'
   imageRepository: 'votingapp'
   containerRegistry: 'hellorings.azurecr.io'
-  dockerfilePath: '$(Build.SourcesDirectory)/azure-vote/Dockerfile-for-app-service'
+  dockerfilePath: '$(Build.SourcesDirectory)/azure-vote/Dockerfile'
   tag: '$(Build.BuildId)'
   
   # Agent VM image name
