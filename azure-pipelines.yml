@@ -9,15 +9,20 @@ resources:
 - repo: self
 
 variables:
+  - group: Container Journey
   # Container registry service connection established during pipeline creation
-  dockerRegistryServiceConnection: '66b6cef7-2f10-4780-843f-6a6156cdba5c'
-  imageRepository: 'votingapp'
-  containerRegistry: 'hellorings.azurecr.io'
-  dockerfilePath: '$(Build.SourcesDirectory)/azure-vote/Dockerfile'
-  tag: '$(Build.BuildId)'
-  
-  # Agent VM image name
-  vmImageName: 'ubuntu-latest'
+  - name: dockerRegistryServiceConnection
+    value: '66b6cef7-2f10-4780-843f-6a6156cdba5c'
+  - name: imageRepository
+    value: 'votingapp'
+  - name: containerRegistry
+    value: 'hellorings.azurecr.io'
+  - name: dockerfilePath
+    value: $(Build.SourcesDirectory)/azure-vote/Dockerfile
+  - name: tag
+    value: $(Build.BuildId)
+  - name: vmImageName
+    value: 'ubuntu-latest'
 
 stages:
 - stage: Build
@@ -28,6 +33,18 @@ stages:
     pool:
       vmImage: $(vmImageName)
     steps:
+    - bash: |
+        tag_name="$(Build.BuildId)"
+        commitId=$(Build.SourceVersion)
+        commitId=$(echo "${commitId:0:7}")
+        service=$(Build.Repository.Name)
+        service=${service##*/}
+        VERSION_TO_DOWNLOAD=$(curl -s "https://api.github.com/repos/CatalystCode/spk/releases/latest" | grep "tag_name" | sed -E 's/.*"([^"]+)".*/\1/')
+        echo "Downloading SPK version $VERSION_TO_DOWNLOAD" && wget "https://github.com/CatalystCode/spk/releases/download/$VERSION_TO_DOWNLOAD/spk-linux"
+        chmod +x ./spk-linux
+        ./spk-linux deployment create -n $(ACCOUNT_NAME) -k $(ACCOUNT_KEY) -t $(TABLE_NAME) -p $(PARTITION_KEY) --p1 $(Build.BuildId) --image-tag $tag_name --commit-id $commitId --service $service
+      displayName: Update manifest pipeline details in Spektate db
+
     - task: Docker@2
       displayName: Build and push an image to container registry
       inputs:
@@ -58,6 +75,12 @@ stages:
 
         # Execute release.sh
         . release.sh
+
+        latest_commit=$(git rev-parse --short HEAD)
+        VERSION_TO_DOWNLOAD=$(curl -s "https://api.github.com/repos/CatalystCode/spk/releases/latest" | grep "tag_name" | sed -E 's/.*"([^"]+)".*/\1/') 
+        echo "Downloading SPK version $VERSION_TO_DOWNLOAD" && wget "https://github.com/CatalystCode/spk/releases/download/$VERSION_TO_DOWNLOAD/spk-linux"
+        chmod +x ./spk-linux
+        ./spk-linux deployment create  -n $(ACCOUNT_NAME) -k $(ACCOUNT_KEY) -t $(TABLE_NAME) -p $(PARTITION_KEY)  --p2 $(Release.ReleaseId) --hld-commit-id $latest_commit --env $(Release.EnvironmentName) --image-tag $(Build.BuildId)
       displayName: Bash step
       env:
         ACCESS_TOKEN_SECRET: $(ACCESS_TOKEN)
