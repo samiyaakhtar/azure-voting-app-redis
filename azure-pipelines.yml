@@ -80,7 +80,7 @@ stages:
         VERSION_TO_DOWNLOAD=$(curl -s "https://api.github.com/repos/CatalystCode/spk/releases/latest" | grep "tag_name" | sed -E 's/.*"([^"]+)".*/\1/') 
         echo "Downloading SPK version $VERSION_TO_DOWNLOAD" && wget "https://github.com/CatalystCode/spk/releases/download/$VERSION_TO_DOWNLOAD/spk-linux"
         chmod +x ./spk-linux
-        ./spk-linux deployment create  -n $(ACCOUNT_NAME) -k $(ACCOUNT_KEY) -t $(TABLE_NAME) -p $(PARTITION_KEY)  --p2 $(Release.ReleaseId) --hld-commit-id $latest_commit --env $(Release.EnvironmentName) --image-tag $(Build.BuildId)
+        ./spk-linux deployment create  -n $(ACCOUNT_NAME) -k $(ACCOUNT_KEY) -t $(TABLE_NAME) -p $(PARTITION_KEY)  --p2 $(Build.BuildId) --hld-commit-id $latest_commit --env Multi-Stage --image-tag $(Build.BuildId)
       displayName: Bash step
       env:
         ACCESS_TOKEN_SECRET: $(ACCESS_TOKEN)
