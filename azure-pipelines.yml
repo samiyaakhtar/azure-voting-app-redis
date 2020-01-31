@@ -34,15 +34,18 @@ stages:
       vmImage: $(vmImageName)
     steps:
     - bash: |
-        tag_name="$(Build.BuildId)"
+        tag_name=$(tag)
         commitId=$(Build.SourceVersion)
         commitId=$(echo "${commitId:0:7}")
         service=$(Build.Repository.Name)
         service=${service##*/}
-        VERSION_TO_DOWNLOAD=$(curl -s "https://api.github.com/repos/CatalystCode/spk/releases/latest" | grep "tag_name" | sed -E 's/.*"([^"]+)".*/\1/')
-        echo "Downloading SPK version $VERSION_TO_DOWNLOAD" && wget "https://github.com/CatalystCode/spk/releases/download/$VERSION_TO_DOWNLOAD/spk-linux"
-        chmod +x ./spk-linux
-        ./spk-linux deployment create -n $(ACCOUNT_NAME) -k $(ACCOUNT_KEY) -t $(TABLE_NAME) -p $(PARTITION_KEY) --p1 $(Build.BuildId) --image-tag $tag_name --commit-id $commitId --service $service
+        echo "Downloading SPK"
+        curl https://raw.githubusercontent.com/Microsoft/bedrock/master/gitops/azure-devops/build.sh > build.sh
+        chmod +x build.sh
+        . ./build.sh --source-only
+        get_spk_version
+        download_spk
+        ./spk/spk deployment create -n $(ACCOUNT_NAME) -k $(ACCOUNT_KEY) -t $(TABLE_NAME) -p $(PARTITION_KEY) --p1 $(Build.BuildId) --image-tag $tag_name --commit-id $commitId --service $service
       displayName: Update manifest pipeline details in Spektate db
 
     - task: Docker@2
@@ -76,11 +79,14 @@ stages:
         # Execute release.sh
         . release.sh
 
-        latest_commit=$(git rev-parse --short HEAD)
-        VERSION_TO_DOWNLOAD=$(curl -s "https://api.github.com/repos/CatalystCode/spk/releases/latest" | grep "tag_name" | sed -E 's/.*"([^"]+)".*/\1/') 
-        echo "Downloading SPK version $VERSION_TO_DOWNLOAD" && wget "https://github.com/CatalystCode/spk/releases/download/$VERSION_TO_DOWNLOAD/spk-linux"
-        chmod +x ./spk-linux
-        ./spk-linux deployment create  -n $(ACCOUNT_NAME) -k $(ACCOUNT_KEY) -t $(TABLE_NAME) -p $(PARTITION_KEY)  --p2 $(Build.BuildId) --hld-commit-id $latest_commit --env Multi-Stage --image-tag $(Build.BuildId)
+        latest_commit=$(git rev-parse --short HEAD) 
+        tag_name=$(Build.BuildId) 
+        curl https://raw.githubusercontent.com/Microsoft/bedrock/master/gitops/azure-devops/build.sh > build.sh 
+        chmod +x build.sh 
+        . ./build.sh --source-only 
+        get_spk_version
+        download_spk 
+        ./spk/spk deployment create  -n $(ACCOUNT_NAME) -k $(ACCOUNT_KEY) -t $(TABLE_NAME) -p $(PARTITION_KEY)  --p2 $(Build.BuildId) --hld-commit-id $latest_commit --env $(Build.SourceBranchName) --image-tag $tag_name
       displayName: Bash step
       env:
         ACCESS_TOKEN_SECRET: $(ACCESS_TOKEN)
