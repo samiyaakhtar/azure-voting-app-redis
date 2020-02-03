@@ -94,7 +94,7 @@ stages:
         . ./build.sh --source-only 
         get_spk_version
         download_spk 
-        ./spk/spk deployment create  -n $(ACCOUNT_NAME) -k $(ACCOUNT_KEY) -t $(TABLE_NAME) -p azure-voting  --p2 $(Build.BuildId) --hld-commit-id $latest_commit --env $(Build.SourceBranchName) --image-tag $tag_name
+        ./spk/spk deployment create  -n $(ACCOUNT_NAME) -k $(ACCOUNT_KEY) -t $(TABLE_NAME) -p azure-voting  --p2 $(Build.BuildId) --hld-commit-id $latest_commit --env dev --image-tag $tag_name
       displayName: Bash step
       env:
         ACCESS_TOKEN_SECRET: $(ACCESS_TOKEN)
